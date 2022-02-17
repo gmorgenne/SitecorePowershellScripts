@@ -1,0 +1,1 @@
+kubectl get pods | ForEach {if ($_.StartsWith("cd")){kubectl logs $_.Substring(0,19) >> logs.txt}}
