@@ -85,9 +85,9 @@ if ($listView -and $Results.Count -gt 0) {
 }
 if ($email -and $Results.Count -gt 0) {
 	$Results | Select-Object TradeOrganization,TrainingCenterName,CRMAccountNumber,CRMTrainingCenter,MilwaukeeRep,Location,Address,SignupCode,ItemId,ItemPath | Export-Csv -notypeinformation -Path $exportPath
-	$secpasswd = ConvertTo-SecureString "BEWzzOyY36hwDe5GN/Pyesi4hA0egf95lYZzt2RFJc9R" -AsPlainText -Force
-	$creds = New-Object System.Management.Automation.PSCredential ("AKIA4NPY3K6QHUSDUGMW", $secpasswd)
-	Send-MailMessage -From 'noreply@milwaukeetool.com' -To $recipients -Subject $emailSubject -Body $emailBody -Attachments $exportPath -SmtpServer 'email-smtp.us-east-1.amazonaws.com' -Credential $creds -UseSsl
+	$secpasswd = ConvertTo-SecureString "" -AsPlainText -Force
+	$creds = New-Object System.Management.Automation.PSCredential ("", $secpasswd)
+	Send-MailMessage -From '' -To $recipients -Subject $emailSubject -Body $emailBody -Attachments $exportPath -SmtpServer '' -Credential $creds -UseSsl
 }
 
 $elapsedTime = $(get-date) - $StartTime

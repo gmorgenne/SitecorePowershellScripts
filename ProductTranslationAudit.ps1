@@ -899,9 +899,9 @@ if ($email -and $Results.Count -gt 0) {
 	$ECResults | Select-Object ItemName,ID,Category,SKU,ECenCaExists,ECfrCaExists,ECesUsExists,ItemPath | Export-Csv -notypeinformation -Path $ECexportPath
 	$EsInEnResults | Select-Object Category,SKU,Title,Overview,ItemPath | Export-Csv -notypeinformation -Path $ESexportPath
 	$FrInEnResults | Select-Object Category,SKU,Title,Overview,ItemPath | Export-Csv -notypeinformation -Path $FRexportPath
-	$secpasswd = ConvertTo-SecureString "BEWzzOyY36hwDe5GN/Pyesi4hA0egf95lYZzt2RFJc9R" -AsPlainText -Force
-	$creds = New-Object System.Management.Automation.PSCredential ("AKIA4NPY3K6QHUSDUGMW", $secpasswd)
-	Send-MailMessage -From 'noreply@milwaukeetool.com' -To $recipients -Subject 'Products Missing Language Report' -Body $emailBody -Attachments @($exportPath, $ECexportPath, $ESexportPath, $FRexportPath) -SmtpServer 'email-smtp.us-east-1.amazonaws.com' -Credential $creds -UseSsl
+	$secpasswd = ConvertTo-SecureString "" -AsPlainText -Force
+	$creds = New-Object System.Management.Automation.PSCredential ("", $secpasswd)
+	Send-MailMessage -From '' -To $recipients -Subject 'Products Missing Language Report' -Body $emailBody -Attachments @($exportPath, $ECexportPath, $ESexportPath, $FRexportPath) -SmtpServer '' -Credential $creds -UseSsl
 }
 if ($uploadToBlob -and $Results.Count -gt 0) {
 	$exportPathExists = Test-Path -Path $exportPath -PathType Leaf

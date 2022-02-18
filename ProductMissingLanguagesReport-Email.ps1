@@ -49,6 +49,6 @@ $allItems | ForEach-Object {
 }
 #$Results | Show-ListView
 $Results | Select-Object ItemName,ItemId,LanguageList,MissingLanguageList,ItemPath | Export-Csv -notypeinformation -Path $DataPath
-$secpasswd = ConvertTo-SecureString "BEWzzOyY36hwDe5GN/Pyesi4hA0egf95lYZzt2RFJc9R" -AsPlainText -Force
-$creds = New-Object System.Management.Automation.PSCredential ("AKIA4NPY3K6QHUSDUGMW", $secpasswd)
-Send-MailMessage -From 'noreply@milwaukeetool.com' -To @('geoff.morgenne@milwaukeetool.com', 'Peter.Vallas@ttigroupna.com', 'eduardo.resendiz@milwaukeetool.com', 'Yvonne.Chan@ttigroupna.com', 'paul.simmerman@milwaukeetool.com') -Subject 'Products Missing Language Report' -Body 'Attached is the most recent report of products that are missing language versions' -Attachments $dataPath -SmtpServer 'email-smtp.us-east-1.amazonaws.com' -Credential $creds -UseSsl
+$secpasswd = ConvertTo-SecureString "" -AsPlainText -Force
+$creds = New-Object System.Management.Automation.PSCredential ("", $secpasswd)
+Send-MailMessage -From 'noreply@milwaukeetool.com' -To @("","") -Subject 'Products Missing Language Report' -Body 'Attached is the most recent report of products that are missing language versions' -Attachments $dataPath -SmtpServer '' -Credential $creds -UseSsl
