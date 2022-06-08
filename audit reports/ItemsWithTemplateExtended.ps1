@@ -13,7 +13,7 @@ $root = Get-Item -Path "/sitecore/content"
 $prompt = @{
     Parameters = @(
         @{ Name="root"; Title="Choose the report root"; Tooltip="Only items from this path will be returned."; }
-        @{ Name = "selectedTemplate"; Title="Base Template"; Tooltip="Select the item to use as a base template for the report"; Root="/sitecore/templates/"}
+        @{ Name = "selectedTemplate"; Title="Base Template"; Tooltip="Select the item to use as a base template for the report"; Root="/sitecore/templates/" }
     )
     Title = "Items With Template Extended Report"
     Description = "Choose the criteria for the report."
