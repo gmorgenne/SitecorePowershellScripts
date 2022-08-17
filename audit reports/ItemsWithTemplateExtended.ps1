@@ -2,18 +2,28 @@
 	.SYNOPSIS
         Lists all content items that inherit from a given template by path
 		Includes all fields provided template defines
-		
+	.DESCRIPTION
+        shows a prompt that can be used to pick a root path and a base template
+		the root path is used to find items in that path
+		the base template is used to:
+			filter the items by that template
+			build an output of the fields included in the report
 	.NOTES
-		Alex Washtell
-		Geoff Morgenne
+		based on ItemsWithTemplate by Alex Washtell shipped in SPE Module
+		updated by Geoff Morgenne for enhanced output
 #>
-$selectedTemplate = Get-Item master:\templates
-$root = Get-Item -Path "/sitecore/content"
 
+$root = Get-Item -Path "/sitecore/content"
+$selectedTemplate = Get-Item master:\templates
+
+######################################################################
+
+# show a prompt to pick the path to search for items
+# and the template to use to filter items and build the output
 $prompt = @{
     Parameters = @(
         @{ Name="root"; Title="Choose the report root"; Tooltip="Only items from this path will be returned."; }
-        @{ Name = "selectedTemplate"; Title="Base Template"; Tooltip="Select the item to use as a base template for the report"; Root="/sitecore/templates/" }
+        @{ Name = "selectedTemplate"; Title="Base Template"; Tooltip="Select the template to find items and output fields for the report"; Root="/sitecore/templates/" }
     )
     Title = "Items With Template Extended Report"
     Description = "Choose the criteria for the report."
@@ -31,10 +41,6 @@ if($result -eq "cancel") {
 
 ###################################################################### 
 
-function BaseTemplateList{
-
-}
-
 function CountLinks{
 	[CmdletBinding()]
 	param(
@@ -44,7 +50,7 @@ function CountLinks{
 	return $links.length
 }
 
-function Template-Check{
+function TemplateCheck{
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory=$true, Position=0)][Sitecore.Data.Items.Item]$item
@@ -66,9 +72,14 @@ Write-Host "------------------------" -f white
 # build default field export list: name, ID, path, count of places that item is used
 $fields = '@{Label="Name"; Expression={$_.Name} }, @{Label="ItemId"; Expression={$_.ID} }, @{Label="Path"; Expression={$_.Paths.FullPath} }, @{ Label="Uses"; Expression={CountLinks $_ } }, '
 
+# Create a list of field names on the Standard Template. This will help us filter out extraneous fields.
+$standardTemplate = Get-Item -Path "master:" -ID "{1930BBEB-7805-471A-A3BE-4858AC7CF696}"
+$standardTemplateTemplateItem = [Sitecore.Data.Items.TemplateItem]$standardTemplate
+$standardFields = $standardTemplateTemplateItem.OwnFields + $standardTemplateTemplateItem.Fields | Select-Object -ExpandProperty key -Unique
+
 # build export fields list from template fields:
 $selectedTemplateItem = [Sitecore.Data.Items.TemplateItem]$selectedTemplate
-$templateFields = $selectedTemplateItem.Fields | Where-Object { -not $_.Name.StartsWith("__") }
+$templateFields = $selectedTemplateItem.Fields | Where-Object { $standardFields -notcontains $_ }
 foreach ($field in $templateFields) {
 	$fields += '@{ Label = "' + $field.Name + '"; Expression = { $_.Fields["' + $field.Name + '"] }; },'
 }
@@ -80,7 +91,7 @@ $props = @{
     InfoDescription = "The following items all inherit from the '$($selectedTemplate.FullPath)' template."
     PageSize = 50
 }
-$items = Get-ChildItem -path $root.Paths.Path -Recurse | Where-Object { Template-Check $_ }
+$items = Get-ChildItem -path $root.Paths.Path -Recurse | Where-Object { TemplateCheck $_ }
 $items | Show-ListView @props -Property $fieldsConverted
 
 $elapsedTime = $(get-date) - $StartTime
