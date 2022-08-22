@@ -1,5 +1,13 @@
-# get all media items
-# if alt text is populated tally else not-populated tally
+<#
+    .SYNOPSIS
+        finds images missing alt text
+    .DESCRIPTION
+        tallies number of images with/without alt text
+		outputs images that don't have alt text
+    .NOTES
+        Version:        1.0
+        Author:         Geoff Morgenne
+#>
 
 $jpegUnversionedTemplate = "{DAF085E8-602E-43A6-8299-038FF171349F}"
 $jpegVersionedTemplate = "{EB3FB96C-D56B-4AC9-97F8-F07B24BB9BF7}"
