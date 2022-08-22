@@ -1,66 +1,76 @@
-# This script will find items by searchPath
-# check for old workflow or no workflow
-# and template inheritance (or not)
-# sets workflow fields
-#############################################################
+<#
+	.SYNOPSIS
+        Workflow audit & set
+	.DESCRIPTION
+        Finds ALL items EXCEPT a particular template and checks workflow
+		If workflow or workflow state is not correct, it can set it
+	.NOTES
+		Geoff Morgenne
+#>
 
-#$searchPath = "master:/sitecore/content/Global/Dictionary"
-#$searchPath = "master:/sitecore/content/Milwaukee Tool/Global"
-#$searchPath = "master:/sitecore/content/Milwaukee Tool/Home"
-$searchPath = "master:/sitecore/content/Milwaukee Tool/Products Repository/North America"
+$searchPath = "master:/sitecore/content"
+$templateToExclude = "{A87A00B1-E6DB-45AB-8B54-636FEC3B5523}" #folder
+$desiredWorkflow = "{A5BC37E7-ED96-4C1E-8590-A26E64DB55EA}"
+$desiredWorkflowState = "{FCA998C5-0CC3-4F91-94D8-0A4E6CAECE88}"
+$auditMode = $true
 
-$mtWorkflow = "{757FAAC3-6E26-4DA7-927F-AF89CE201E74}"
-$lbWorkflow = "{5B6EBED7-92C0-4F4E-847F-C72F4F4E1132}"
-$templtetoCheckId = "{A87A00B1-E6DB-45AB-8B54-636FEC3B5523}" #folder
-#$basePageId = [Sitecore.Data.ID]::Parse("{CC9811A3-0FB6-4405-BA5C-63E6B0C97C00}")
-#$baseProductID  = [Sitecore.Data.ID]::Parse("{A819D3F6-DD02-47DD-9897-5BA714E39152}")
-
-# Proposed MT Workflow State
-$mtDone = "{642A9C55-445D-40B8-9816-2FAD7AC16A28}"
-
-############### main ####################
+######################################################################
+$StartTime = $(get-date)
 Write-Host "------------------------" -f white
 Write-Host "Begin Script" -f green
 Write-Host "------------------------" -f white
 
 New-UsingBlock (New-Object Sitecore.Data.BulkUpdateContext) {
-	$allthethings = @( Get-Item -Path $searchPath) + @( Get-ChildItem -Path $searchPath -Recurse)
-	foreach ($onething in $allthethings) {
-	    $template = [Sitecore.Data.Managers.TemplateManager]::GetTemplate($onething.TemplateID,$onething.Database)
-	    
-		#$doesItInherit = $template.InheritsFrom($basePageId) -or $template.InheritsFrom($baseProductID)
-		$doesItInherit = $template.InheritsFrom($templtetoCheckId)
+	$allItems = @( Get-Item -Path $searchPath) + @( Get-ChildItem -Path $searchPath -Recurse)
+	foreach ($item in $allItems) {
+	    $template = [Sitecore.Data.Managers.TemplateManager]::GetTemplate($item.TemplateID,$item.Database)
+		$doesItInherit = $template.InheritsFrom($templateToExclude)
 		if (!$doesItInherit) {
-			$currentWorkflow = $onething.Fields["__Workflow"].value
-			$currentState = $onething.Fields["__Workflow state"].value
-			if ($currentWorkflow -eq $lbWorkflow) {
-				Write-Host "Item workflow is lionbridge, Updating Item: " $onething.ItemPath 
-				
-				#$onething.Editing.BeginEdit()
-				#$onething.Fields["__Workflow"].Value = $mtWorkflow
-				#$onething.Fields["__Default workflow"].Value = $mtWorkflow
-				#$onething.Fields["__Workflow state"].Value = $mtDone
-				#$onething.Editing.EndEdit()
+			$currentWorkflow = $item.Fields["__Workflow"].value
+			$currentState = $item.Fields["__Workflow state"].value
+			if ($currentWorkflow -ne $desiredWorkflow) {
+				Write-Host "Item workflow is different from desired, Updating Item: " $item.ItemPath -f red
+				if (!$auditMode) {
+					$item.Editing.BeginEdit()
+					$item.Fields["__Workflow"].Value = $desiredWorkflow
+					$item.Fields["__Default workflow"].Value = $desiredWorkflow
+					$item.Fields["__Workflow state"].Value = $desiredWorkflowState
+					$item.Editing.EndEdit()
+				}
 			}
 			if ($currentWorkflow -eq "") {
-				Write-Host "Item doesn't have workflow, Updating Item: " $onething.ItemPath 
-				
-				#$onething.Editing.BeginEdit()
-				#$onething.Fields["__Workflow"].Value = $mtWorkflow
-				#$onething.Fields["__Default workflow"].Value = $mtWorkflow
-				#$onething.Fields["__Workflow state"].Value = $mtDone
-				#$onething.Editing.EndEdit()
+				Write-Host "Item doesn't have workflow, Updating Item: " $item.ItemPath -f DarkRed
+				if (!$auditMode) {
+					$item.Editing.BeginEdit()
+					$item.Fields["__Workflow"].Value = $desiredWorkflow
+					$item.Fields["__Default workflow"].Value = $desiredWorkflow
+					$item.Fields["__Workflow state"].Value = $desiredWorkflowState
+					$item.Editing.EndEdit()
+				}
+			}
+			if ($currentState -ne $desiredWorkflowState) {
+			    Write-Host "Item workflow state is different from desired, Updating Item: " $item.ItemPath -f yellow
+				if (!$auditMode) {
+					$item.Editing.BeginEdit()
+					$item.Fields["__Workflow state"].Value = $desiredWorkflowState
+					$item.Editing.EndEdit()
+				}
 			}
 			if ($currentState -eq "") {
-			    Write-Host "Item workflow state is empty, Updating Item: " $onething.ItemPath
-				
-				#$onething.Editing.BeginEdit()
-				#$onething.Fields["__Workflow state"].Value = $mtDone
-				#$onething.Editing.EndEdit()
+			    Write-Host "Item workflow state is empty, Updating Item: " $item.ItemPath -f DarkYellow
+				if (!$auditMode) {
+					$item.Editing.BeginEdit()
+					$item.Fields["__Workflow state"].Value = $desiredWorkflowState
+					$item.Editing.EndEdit()
+				}
 			}
 		}
 	}  
 }
+
+$elapsedTime = $(get-date) - $StartTime
+$totalTime = "{0:HH:mm:ss}" -f ([datetime]$elapsedTime.Ticks)
 Write-Host "------------------------" -f white
-Write-Host "End Script" -f green
+Write-Host "End Script - Total time: " $totalTime -f green
 Write-Host "------------------------" -f white
+######################################################################
