@@ -79,7 +79,7 @@ $standardFields = $standardTemplateTemplateItem.OwnFields + $standardTemplateTem
 
 # build export fields list from template fields:
 $selectedTemplateItem = [Sitecore.Data.Items.TemplateItem]$selectedTemplate
-$templateFields = $selectedTemplateItem.Fields | Where-Object { $standardFields -notcontains $_ }
+$templateFields = $selectedTemplateItem.Fields | Where-Object { $standardFields -notcontains $_.Name }
 foreach ($field in $templateFields) {
 	$fields += '@{ Label = "' + $field.Name + '"; Expression = { $_.Fields["' + $field.Name + '"] }; },'
 }
