@@ -13,6 +13,7 @@ $templateToExclude = "{A87A00B1-E6DB-45AB-8B54-636FEC3B5523}" #folder
 $desiredWorkflow = "{A5BC37E7-ED96-4C1E-8590-A26E64DB55EA}"
 $desiredWorkflowState = "{FCA998C5-0CC3-4F91-94D8-0A4E6CAECE88}"
 $auditMode = $true
+$handleEmpty = $false # set to true if you want to evaluate an item with an empty workflow
 
 ######################################################################
 $StartTime = $(get-date)
@@ -28,7 +29,7 @@ New-UsingBlock (New-Object Sitecore.Data.BulkUpdateContext) {
 		if (!$doesItInherit) {
 			$currentWorkflow = $item.Fields["__Workflow"].value
 			$currentState = $item.Fields["__Workflow state"].value
-			if ($currentWorkflow -ne $desiredWorkflow) {
+			if ($currentWorkflow -ne "" -and $currentWorkflow -ne $desiredWorkflow) {
 				Write-Host "Item workflow is different from desired, Updating Item: " $item.ItemPath -f red
 				if (!$auditMode) {
 					$item.Editing.BeginEdit()
@@ -38,7 +39,7 @@ New-UsingBlock (New-Object Sitecore.Data.BulkUpdateContext) {
 					$item.Editing.EndEdit()
 				}
 			}
-			if ($currentWorkflow -eq "") {
+			if ($handleEmpty -and $currentWorkflow -eq "") {
 				Write-Host "Item doesn't have workflow, Updating Item: " $item.ItemPath -f DarkRed
 				if (!$auditMode) {
 					$item.Editing.BeginEdit()
@@ -48,7 +49,7 @@ New-UsingBlock (New-Object Sitecore.Data.BulkUpdateContext) {
 					$item.Editing.EndEdit()
 				}
 			}
-			if ($currentState -ne $desiredWorkflowState) {
+			if ($currentState -ne "" -and $currentState -ne $desiredWorkflowState) {
 			    Write-Host "Item workflow state is different from desired, Updating Item: " $item.ItemPath -f yellow
 				if (!$auditMode) {
 					$item.Editing.BeginEdit()
@@ -56,7 +57,7 @@ New-UsingBlock (New-Object Sitecore.Data.BulkUpdateContext) {
 					$item.Editing.EndEdit()
 				}
 			}
-			if ($currentState -eq "") {
+			if ($handleEmpty -and $currentState -eq "") {
 			    Write-Host "Item workflow state is empty, Updating Item: " $item.ItemPath -f DarkYellow
 				if (!$auditMode) {
 					$item.Editing.BeginEdit()
