@@ -34,15 +34,15 @@ function Audit-Datasource {
 	)
 
     if ([Sitecore.Data.ID]::IsID($datasource)) {
-        $datasourceItem = Get-Item -path "/sitecore/content" -ID $testItemRenderingDatasource
+        $datasourceItem = Get-Item -path "/sitecore" -ID $testItemRenderingDatasource
         $datasourceItemPath = $datasourceItem.Paths.FullPath
 
         if ($datasourceItemPath.StartsWith($globalSitePath)) {
-            Write-LogExtended $logFile "    item has a datasource that is shared in a global location: $datasourceItemPath"
+            Write-LogExtended $logFile "    [Rendering Audit] item has a datasource that is shared in a global location: $datasourceItemPath"
         } elseif ($datasourceItemPath.StartsWith($destSitePath)) {
-            Write-LogExtended $logFile "    item has a datasource that is shared at the site level: $datasourceItemPath"
+            Write-LogExtended $logFile "    [Rendering Audit] item has a datasource that is shared at the site level: $datasourceItemPath"
         } else {
-            Write-LogExtended $logFile "    item has a datasource that may need to be updated: $datasourceItemPath" yellow
+            Write-LogExtended $logFile "    [Rendering Audit] item has a datasource that may need to be updated: $datasourceItemPath" yellow
         }
     }
 }
@@ -102,11 +102,22 @@ if (-not(ShouldProcess-Item $srcPath)) {
     Write-LogExtended $logFile "source path is not a valid item to copy"
     return
 }
+
+$srcLast = Split-Path $srcPath -Leaf
+$destLast = Split-Path $destPath -Leaf
+$relativePathRoot = ""
+if ($srcLast -ne $destLast) {
+    $relativePathRoot = "/$srcLast"
+}
+
 $items = @( Get-Item -path $srcPath ) + @( Get-ChildItem -path $srcPath -recurse )
 foreach ($item in $items) {
     # check if item can be copied by building path to dest
     $itemPath = $item.Paths.FullPath
-    $relativePath = $itemPath.Replace($srcPath, "")
+    $relativePath = $relativePathRoot
+    if ($srcPath -ne $itemPath) {
+        $relativePath += $itemPath.Replace($srcPath, "")
+    }
     $testPath = $destPath + $relativePath
     $testItemExists = Test-Path -Path $testPath
 
@@ -124,28 +135,32 @@ foreach ($item in $items) {
             Write-LogExtended $logFile "   auditing renderings"
             # compare # renderings
             if ($testItemRenderings.Length -ne $renderings.Length) {
-                Write-LogExtended $logFile "    different count of renderings" darkred
+                Write-LogExtended $logFile "    [Rendering Audit] different count of renderings" red
 
-                $shouldCopyRenderings = Show-Confirm -Title "Copy presentation details to $testPath?"
-                if ($shouldCopyRenderings -eq "yes") {
-                    Write-LogExtended $logFile "    copying presentation details:"
-                    $itemRenderingFieldValue = $item.Fields["__Renderings"].Value
-                    $itemFinalRenderingFieldValue = $item.Fields["__Final Renderings"].Value
+                if (!$audit) {
+                    $shouldCopyRenderings = Show-Confirm -Title "Copy presentation details to $($testPath)?"
+                    if ($shouldCopyRenderings -eq "yes") {
+                        Write-LogExtended $logFile "    copying presentation details:"
+                        $itemRenderingFieldValue = $item.Fields["__Renderings"].Value
+                        $itemFinalRenderingFieldValue = $item.Fields["__Final Renderings"].Value
 
-                    $testItem.Editing.BeginEdit()
-                    $testItem.Fields["__Renderings"].Value = $itemRenderingFieldValue
-                    if ($itemFinalRenderingFieldValue) {
-                        $testItem.Fields["__Final Renderings"].Value = $itemFinalRenderingFieldValue
+                        $testItem.Editing.BeginEdit()
+                        $testItem.Fields["__Renderings"].Value = $itemRenderingFieldValue
+                        if ($itemFinalRenderingFieldValue) {
+                            $testItem.Fields["__Final Renderings"].Value = $itemFinalRenderingFieldValue
+                        }
+                        $testItem.Editing.EndEdit()
+                    } else {
+                        Write-LogExtended $logFile "    skipped copying presentation details"
                     }
-                    $testItem.Editing.EndEdit()
-                } else {
-                    Write-LogExtended $logFile "    skipped copying presentation details"
                 }
             }
             # callout if a datasource is missing or stored outside shared site, site data, or local location
             foreach($testItemRendering in $testItemRenderings) {
                 $testItemRenderingDatasource = $testItemRendering.Datasource
-                Audit-Datasource $testItemRenderingDatasource
+                if ($testItemRenderingDatasource) {
+                    Audit-Datasource $testItemRenderingDatasource
+                }
             }
             # TODO: rendering parameters? tricky bit here is if there's multiple of the same rendering on both pages.
 
@@ -155,9 +170,9 @@ foreach ($item in $items) {
         # if item is a page, let's copy the local datasources if any and change page design & template
         Write-LogExtended $logFile "Copying item to $testPath" green
         if (!$audit) {
-            $shouldCopy = Show-Confirm -Title "Copy item to $testPath?"
+            $shouldCopy = Show-Confirm -Title "Copy item to $($testPath)?"
             if ($shouldCopy -eq "yes") {
-                Write-LogExtended $logFile "    successful copy?:"
+                Write-LogExtended $logFile "    successful copy"
                 Copy-Item -Path $itemPath -Destination $testPath
             } else {
                 Write-LogExtended $logFile "    skipped copying"
@@ -178,7 +193,10 @@ foreach ($item in $items) {
                 $newItemRenderings = Get-Rendering -item $newItem -FinalLayout
                 foreach ($rendering in $newItemRenderings) {
                     $datasourceID = $rendering.Datasource
-                    Audit-Datasource $datasourceID
+                    if ([Sitecore.Data.ID]::IsID($datasourceID)) {
+                        $datasourceItem = Get-Item -path $srcPath -ID $datasourceID
+                        Write-LogExtended $logFile "    new item has a datasource that may need to be updated: $($datasourceItem.Paths.FullPath)" yellow
+                    }
                 }
             }
         }
