@@ -95,8 +95,19 @@ Write-Host "------------------------" -f white
 # build collection of fields to output
 $fields = '@{Label="Page Name"; Expression={$_.PageName} }, @{Label="Page Path"; Expression={$_.PagePath} },'
 
+# create a list of field names on the Standard Template. This will help us filter out extraneous fields.
+$standardTemplate = Get-Item -Path "master:" -ID "{1930BBEB-7805-471A-A3BE-4858AC7CF696}"
+$standardTemplateTemplateItem = [Sitecore.Data.Items.TemplateItem]$standardTemplate
+$standardFields = $standardTemplateTemplateItem.OwnFields + $standardTemplateTemplateItem.Fields | Select-Object -ExpandProperty key -Unique
+$standardRenderingParamTemplate = Get-Item -Path "master" -ID "{8CA06D6A-B353-44E8-BC31-B528C7306971}"
+$standardRenderingParamTemplateItem = [Sitecore.Data.Items.TemplateItem]$standardRenderingParamTemplate
+$standardFields += $standardRenderingParamTemplateItem.OwnFields + $standardRenderingParamTemplateItem.Fields | Select-Object -ExpandProperty key -Unique
+
+# get parameters template of selected rendering
 $parametersTemplate = Get-Item $selectedRendering["Parameters Template"]
-$parameterTemplateFields = $parametersTemplate.Axes.GetDescendants() | Where-Object { !($_.Name -eq "__Standard Values") -and $_.TemplateId -eq "{455A3E98-A627-4B40-8035-E683A0331AC7}" } # {455A3E98-A627-4B40-8035-E683A0331AC7} = template field
+$parametersTemplateItem = [Sitecore.Data.Items.TemplateItem]$parametersTemplate
+$parameterTemplateFields = $parametersTemplateItem.Fields | Where-Object { $standardFields -notcontains $_.Name }
+
 if ($parameterTemplateFields.Length -gt 0) {
     foreach ($field in $parameterTemplateFields) {
         $fields += ' @{ Label = "' + $field.Name + '"; Expression = { $_.' + $field.Name + ' }; },'
