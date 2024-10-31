@@ -13,8 +13,8 @@
 		updated by Geoff Morgenne for enhanced output
 #>
 
-$root = Get-Item -Path "/sitecore/content"
-$selectedTemplate = Get-Item master:\templates
+$root = Get-Item -Path "master:\content"
+$selectedTemplate = Get-Item "master:\templates"
 
 ######################################################################
 
@@ -22,7 +22,7 @@ $selectedTemplate = Get-Item master:\templates
 # and the template to use to filter items and build the output
 $prompt = @{
     Parameters = @(
-        @{ Name="root"; Title="Choose the report root"; Tooltip="Only items from this path will be returned."; }
+        @{ Name="root"; Title="Choose the report root"; Tooltip="Only items from this path will be returned."; Root="/sitecore/content" }
         @{ Name = "selectedTemplate"; Title="Base Template"; Tooltip="Select the template to find items and output fields for the report"; Root="/sitecore/templates/" }
     )
     Title = "Items With Template Extended Report"
@@ -91,7 +91,7 @@ $props = @{
     InfoDescription = "The following items all inherit from the '$($selectedTemplate.FullPath)' template."
     PageSize = 50
 }
-$items = Get-ChildItem -path $root.Paths.Path -Recurse | Where-Object { TemplateCheck $_ }
+$items = Get-ChildItem -Path "master:$($root.Paths.Path)" -Recurse | Where-Object { TemplateCheck $_ }
 $items | Show-ListView @props -Property $fieldsConverted
 
 $elapsedTime = $(get-date) - $StartTime
