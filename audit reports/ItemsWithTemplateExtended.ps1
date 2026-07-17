@@ -14,7 +14,7 @@
 #>
 
 $root = Get-Item -Path "master:\content"
-$selectedTemplate = Get-Item "master:\templates"
+$selectedTemplate = Get-Item -Path "master:\templates"
 
 ######################################################################
 
