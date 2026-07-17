@@ -10,6 +10,7 @@
 #>
 
 $auditMode = $true
+$searchPath = "master:/sitecore/content"
 
 function HasReference {
     param(
@@ -21,12 +22,12 @@ function HasReference {
 }
 
 function GetItemsWithoutReferences {
-	$items = Get-ChildItem -Path "master:/sitecore/content" -Recurse | Where-Object { $_.TemplateName -notmatch "Folder" }
+	$items = Get-ChildItem -Path $searchPath -Recurse | Where-Object { $_.TemplateName -notmatch "Folder" }
 	foreach($item in $items) {
 		if(!(HasReference($item))) {
 			$item
             if (!$auditMode) {
-                Remove-Item -Path $item.ItemPath
+                $item | Remove-Item
             }
 		}
 	}
@@ -39,20 +40,22 @@ Write-Host "Begin Script" -f green
 Write-Host "------------------------" -f white
 
 if ($auditMode) {
-    Write-Host "NOTE: This script is running in audit mode. Update $auditMode bool to act on removing these items."
+    Write-Host "NOTE: This script is running in audit mode. Update auditMode bool to act on removing these items."
+	# output items without links
+	$props = @{
+		InfoTitle = "Unused items"
+		InfoDescription = "Lists all items that are not linked to other items."
+		PageSize = 25
+	}
+	
+	GetItemsWithoutReferences | Show-ListView @props -Property @{Label="Name"; Expression={$_.DisplayName} },
+		@{Label="Template ID"; Expression={$_.TemplateID } },
+		@{Label="Template Name"; Expression={$_.TemplateName } },
+		@{Label="Path"; Expression={$_.ItemPath} }
+} else {
+	GetItemsWithoutReferences
 }
 
-# output items without links
-$props = @{
-    InfoTitle = "Unused items"
-    InfoDescription = "Lists all items that are not linked to other items."
-    PageSize = 25
-}
-
-GetItemsWithoutReferences | Show-ListView @props -Property @{Label="Name"; Expression={$_.DisplayName} },
-    @{Label="Template ID"; Expression={$_.TemplateID } },
-    @{Label="Template Name"; Expression={$_.TemplateName } },
-    @{Label="Path"; Expression={$_.ItemPath} }
 
 $elapsedTime = $(get-date) - $StartTime
 $totalTime = "{0:HH:mm:ss}" -f ([datetime]$elapsedTime.Ticks)
