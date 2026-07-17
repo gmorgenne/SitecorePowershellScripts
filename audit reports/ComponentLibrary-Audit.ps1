@@ -17,6 +17,7 @@ class Result
 {
     [String] $Name
     [String] $Path
+	[String] $Feature
     [Int] $Count
     [String] $Example
 }
@@ -57,6 +58,7 @@ foreach ($rendering in $renderings) {
 	$r = New-Object Result
 	$r.Name = $rendering.Name
 	$r.Path = $rendering.Paths.Path
+	$r.Feature = $rendering.Parent.Name
 	$r.Count = $count
 	$r.Example = $example
 	$results.Add($r)
@@ -66,10 +68,16 @@ $props = @{
         Title = "Component Library Report"
         PageSize = 25
     }
-$results | Show-ListView @props -Property @{Label="Name"; Expression={$_.Title} }, 
+$results | Show-ListView @props -Property @{Label="Name"; Expression={$_.Name} }, 
     @{Label="Path"; Expression={$_.Path} },
+	@{Label="Feature"; Expression={$_.Feature} },
     @{Label="Count"; Expression={$_.Count} },
     @{Label="Example"; Expression={$_.Example} }
+ 
+$groupedResults = $results | Group-Object -Property Feature  
+foreach ($group in $groupedResults) {
+    Write-Host "Feature: $($group.Name) - $($group.Count)"
+}
 
 $elapsedTime = $(get-date) - $StartTime
 $totalTime = "{0:HH:mm:ss}" -f ([datetime]$elapsedTime.Ticks)
