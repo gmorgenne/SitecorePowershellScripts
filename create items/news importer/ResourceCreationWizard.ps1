@@ -44,7 +44,7 @@ $criteria = @(
     @{ Filter = "Equals"; Field = "_latestversion"; Value = "1"; }, 
     @{ Filter = "Equals"; Field = "_templatename"; Value = "Resource"; }, 
     @{ Filter = "DescendantOf"; Value = $parentItem; },
-    @{ Filter = "Equals"; Field = "OpenGraphTitle"; Value = $cleanedNewItemName; }
+    @{ Filter = "Equals"; Field = "Name"; Value = $cleanedNewItemName; }
 )
 $queryProps = @{
     Index    = "sitecore_master_index"
