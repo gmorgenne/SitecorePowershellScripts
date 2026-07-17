@@ -7,7 +7,7 @@
     .Notes
         if name is selected, template filter is not applied
 #>
-$sourcePath = Get-Item -Path "/sitecore/content"
+$sourcePath = $SitecoreContextItem
 $destinationPath = Get-Item -Path "/sitecore/content"
 $where = "" #this is optional and looks at item name
 $selectedTemplate = Get-Item master:\templates
